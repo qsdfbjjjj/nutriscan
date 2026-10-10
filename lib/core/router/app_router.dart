@@ -9,6 +9,7 @@ import '../../presentation/auth/login_screen.dart';
 import '../../presentation/favorites/favorites_screen.dart';
 import '../../presentation/home/dashboard_screen.dart';
 import '../../presentation/home/home_shell.dart';
+import '../../presentation/home/popular_cubit.dart';
 import '../../presentation/product/product_cubit.dart';
 import '../../presentation/product/product_screen.dart';
 import '../../presentation/search/search_bloc.dart';
@@ -74,7 +75,10 @@ GoRouter createRouter(AuthCubit authCubit) {
               GoRoute(
                 path: Routes.home,
                 name: 'home',
-                builder: (context, state) => const DashboardScreen(),
+                builder: (context, state) => BlocProvider(
+                  create: (_) => sl<PopularCubit>()..load(),
+                  child: const DashboardScreen(),
+                ),
               ),
             ],
           ),

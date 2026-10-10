@@ -21,7 +21,7 @@ void main() {
 
   blocTest<SearchBloc, SearchState>(
     'успешный поиск: loading → success',
-    setUp: () => when(() => repository.search('молоко')).thenAnswer(
+    setUp: () => when(() => repository.search('молоко', kazakhstanOnly: any(named: 'kazakhstanOnly'))).thenAnswer(
       (_) async => const SearchResult(products: [milk], page: 1, hasMore: true),
     ),
     build: buildBloc,
@@ -41,7 +41,7 @@ void main() {
 
   blocTest<SearchBloc, SearchState>(
     'пустой ответ: loading → empty',
-    setUp: () => when(() => repository.search('абв')).thenAnswer(
+    setUp: () => when(() => repository.search('абв', kazakhstanOnly: any(named: 'kazakhstanOnly'))).thenAnswer(
       (_) async => const SearchResult(products: [], page: 1, hasMore: false),
     ),
     build: buildBloc,
@@ -55,7 +55,7 @@ void main() {
 
   blocTest<SearchBloc, SearchState>(
     'ошибка сети: loading → failure',
-    setUp: () => when(() => repository.search('молоко')).thenThrow(const NetworkFailure()),
+    setUp: () => when(() => repository.search('молоко', kazakhstanOnly: any(named: 'kazakhstanOnly'))).thenThrow(const NetworkFailure()),
     build: buildBloc,
     act: (bloc) => bloc.add(const SearchQueryChanged('молоко')),
     wait: const Duration(milliseconds: 50),
@@ -73,12 +73,12 @@ void main() {
     act: (bloc) => bloc.add(const SearchQueryChanged('м')),
     wait: const Duration(milliseconds: 50),
     expect: () => <SearchState>[],
-    verify: (_) => verifyNever(() => repository.search(any())),
+    verify: (_) => verifyNever(() => repository.search(any(), kazakhstanOnly: any(named: 'kazakhstanOnly'))),
   );
 
   blocTest<SearchBloc, SearchState>(
     'следующая страница добавляется в конец списка',
-    setUp: () => when(() => repository.search('молоко', page: 2)).thenAnswer(
+    setUp: () => when(() => repository.search('молоко', page: 2, kazakhstanOnly: any(named: 'kazakhstanOnly'))).thenAnswer(
       (_) async => const SearchResult(products: [kefir], page: 2, hasMore: false),
     ),
     build: buildBloc,
@@ -104,6 +104,31 @@ void main() {
         query: 'молоко',
         products: [milk, kefir],
         page: 2,
+      ),
+    ],
+  );
+
+  blocTest<SearchBloc, SearchState>(
+    'фильтр «Казахстан» перезапускает поиск с новым параметром',
+    setUp: () => when(() => repository.search('молоко', kazakhstanOnly: false)).thenAnswer(
+      (_) async => const SearchResult(products: [milk, kefir], page: 1, hasMore: false),
+    ),
+    build: buildBloc,
+    seed: () => const SearchState(
+      status: SearchStatus.success,
+      query: 'молоко',
+      products: [milk],
+      page: 1,
+    ),
+    act: (bloc) => bloc.add(const SearchCountryToggled(false)),
+    expect: () => const [
+      SearchState(status: SearchStatus.loading, query: 'молоко', kazakhstanOnly: false),
+      SearchState(
+        status: SearchStatus.success,
+        query: 'молоко',
+        products: [milk, kefir],
+        page: 1,
+        kazakhstanOnly: false,
       ),
     ],
   );

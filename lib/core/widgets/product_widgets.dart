@@ -84,6 +84,7 @@ class ProductTile extends StatelessWidget {
     final s = context.s;
     final kcal = product.nutriments.kcal;
     final subtitle = [
+      if (product.isMadeInKazakhstan) 'KZ',
       if (product.brand != null) product.brand!,
       if (kcal != null) '${kcal.round()} ${s.languageCode == 'ru' ? 'ккал' : 'kcal'}',
     ].join(' · ');

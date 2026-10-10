@@ -28,6 +28,9 @@ class Product extends Equatable {
 
   bool get hasAllergens => allergens.isNotEmpty;
 
+  /// Префикс штрихкода 487 закреплён GS1 за Казахстаном.
+  bool get isMadeInKazakhstan => barcode.startsWith('487');
+
   @override
   List<Object?> get props => [
         barcode,

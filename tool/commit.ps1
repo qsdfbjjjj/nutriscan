@@ -23,6 +23,13 @@ $steps = @(
        p = @('.') }
 )
 
+# Если есть tool\commit_message.txt — один коммит с этим сообщением.
+$msgFile = Join-Path $PSScriptRoot 'commit_message.txt'
+if (Test-Path $msgFile) {
+    $steps = @(@{ m = (Get-Content $msgFile -Raw -Encoding UTF8).Trim(); p = @('.') })
+    Remove-Item $msgFile
+}
+
 foreach ($step in $steps) {
     git add -- $step.p 2>$null
     git diff --cached --quiet

@@ -61,7 +61,7 @@ void main() {
 
   test('search без сети берёт результаты из кэша', () async {
     const cached = SearchResult(products: [milk], page: 1, hasMore: false, fromCache: true);
-    when(() => api.search('молоко', page: 1)).thenThrow(const NetworkFailure());
+    when(() => api.search('молоко', page: 1, kazakhstanOnly: false)).thenThrow(const NetworkFailure());
     when(() => local.getCachedSearch('молоко', 1)).thenReturn(cached);
 
     final result = await repository.search('молоко');

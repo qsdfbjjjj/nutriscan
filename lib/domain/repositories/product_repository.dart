@@ -7,7 +7,11 @@ import '../entities/search_result.dart';
 /// откуда приходят данные: из сети или из локального кэша.
 /// Ошибки выбрасываются как [Failure] (см. core/error/failures.dart).
 abstract interface class ProductRepository {
-  Future<SearchResult> search(String query, {int page = 1});
+  /// [kazakhstanOnly] — искать только среди продуктов, которые продаются в Казахстане.
+  Future<SearchResult> search(String query, {int page = 1, bool kazakhstanOnly = false});
+
+  /// Популярные казахстанские продукты (штрихкод 487…).
+  Future<SearchResult> getPopularInKazakhstan();
 
   Future<ProductResult> getProduct(String barcode);
 

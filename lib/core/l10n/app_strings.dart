@@ -49,10 +49,21 @@ class AppStrings {
       _t('Сканер камерой появится на неделе 11, пока введите штрихкод вручную',
           'Camera scanner is coming in week 11, enter the barcode manually for now');
 
+  String get popularKz => _t('Популярное в Казахстане', 'Popular in Kazakhstan');
+  String get popularKzHint =>
+      _t('Казахстанские продукты (штрихкод 487…)', 'Made in Kazakhstan (barcode 487…)');
+  String get popularError =>
+      _t('Не удалось загрузить подборку', 'Could not load the selection');
+  String get madeInKz => _t('Сделано в Казахстане', 'Made in Kazakhstan');
+
   // Поиск
   String get searchHint => _t('Название продукта, например «молоко»', 'Product name, e.g. "milk"');
   String get searchStart => _t('Начните вводить название продукта', 'Start typing a product name');
   String get nothingFound => _t('Ничего не найдено', 'Nothing found');
+  String get nothingFoundKz => _t(
+      'В Казахстане ничего не найдено.\nПопробуйте выключить фильтр или написать название по-английски',
+      'Nothing found in Kazakhstan.\nTry turning off the filter or searching in English');
+  String get kzOnly => _t('Только Казахстан', 'Kazakhstan only');
   String get offlineData =>
       _t('Нет сети — показаны сохранённые данные', 'Offline — showing saved data');
 

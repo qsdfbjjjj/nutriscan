@@ -14,6 +14,7 @@ import '../../domain/repositories/product_repository.dart';
 import '../../presentation/auth/auth_cubit.dart';
 import '../../presentation/favorites/favorites_cubit.dart';
 import '../../presentation/history/history_cubit.dart';
+import '../../presentation/home/popular_cubit.dart';
 import '../../presentation/product/product_cubit.dart';
 import '../../presentation/search/search_bloc.dart';
 import '../../presentation/settings/settings_provider.dart';
@@ -59,5 +60,6 @@ Future<void> initDependencies() async {
     ..registerFactory(() => SearchBloc(sl()))
     ..registerFactory(() => ProductCubit(sl()))
     ..registerFactory(() => FavoritesCubit(sl()))
-    ..registerFactory(() => HistoryCubit(sl()));
+    ..registerFactory(() => HistoryCubit(sl()))
+    ..registerFactory(() => PopularCubit(sl()));
 }

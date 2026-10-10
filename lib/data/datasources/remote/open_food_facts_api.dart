@@ -46,7 +46,7 @@ class OpenFoodFactsApi {
   }
 
   /// GET /cgi/search.pl — поиск по названию с пагинацией.
-  Future<SearchResult> search(String query, {int page = 1}) async {
+  Future<SearchResult> search(String query, {int page = 1, bool kazakhstanOnly = false}) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/cgi/search.pl',
@@ -58,6 +58,12 @@ class OpenFoodFactsApi {
           'page': page,
           'page_size': pageSize,
           'fields': ProductModel.apiFields,
+          // Фильтр по стране продажи.
+          if (kazakhstanOnly) ...{
+            'tagtype_0': 'countries',
+            'tag_contains_0': 'contains',
+            'tag_0': 'kazakhstan',
+          },
         },
       );
       final data = response.data ?? const <String, dynamic>{};
@@ -78,6 +84,43 @@ class OpenFoodFactsApi {
     } on DioException catch (e) {
       throw _mapError(e);
     }
+  }
+
+  /// GET /api/v2/search — самые сканируемые продукты, продающиеся в Казахстане.
+  /// Оставляем только казахстанские (штрихкод 487…) и с нормальным названием.
+  Future<SearchResult> getPopularInKazakhstan() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v2/search',
+        queryParameters: {
+          'countries_tags_en': 'kazakhstan',
+          'sort_by': 'unique_scans_n',
+          'page_size': 200,
+          'fields': ProductModel.apiFields,
+        },
+      );
+      final raw = response.data?['products'];
+      final products = raw is List
+          ? raw
+              .whereType<Map<String, dynamic>>()
+              .map(ProductModel.fromApi)
+              .where((p) => p.isMadeInKazakhstan && _hasRealName(p))
+              .take(20)
+              .toList()
+          : <Product>[];
+      return SearchResult(products: products, page: 1, hasMore: false);
+    } on DioException catch (e) {
+      throw _mapError(e);
+    }
+  }
+
+  /// В базе встречаются названия "Unknown" или просто штрихкод вместо имени.
+  static bool _hasRealName(Product p) {
+    final name = p.name.trim();
+    return name.isNotEmpty &&
+        name.toLowerCase() != 'unknown' &&
+        int.tryParse(name) == null &&
+        p.imageUrl != null;
   }
 
   Failure _mapError(DioException e) {

@@ -19,13 +19,34 @@ class ProductRepositoryImpl implements ProductRepository {
   final ProductLocalDataSource _local;
 
   @override
-  Future<SearchResult> search(String query, {int page = 1}) async {
+  Future<SearchResult> search(
+    String query, {
+    int page = 1,
+    bool kazakhstanOnly = false,
+  }) async {
+    // Для фильтра по Казахстану — отдельный ключ кэша.
+    final cacheKey = kazakhstanOnly ? 'kz:$query' : query;
     try {
-      final result = await _remote.search(query, page: page);
-      await _local.cacheSearch(query, result);
+      final result = await _remote.search(query, page: page, kazakhstanOnly: kazakhstanOnly);
+      await _local.cacheSearch(cacheKey, result);
       return result;
     } on NetworkFailure {
-      final cached = _local.getCachedSearch(query, page);
+      final cached = _local.getCachedSearch(cacheKey, page);
+      if (cached != null) return cached;
+      rethrow;
+    }
+  }
+
+  static const _popularKey = '__popular_kz__';
+
+  @override
+  Future<SearchResult> getPopularInKazakhstan() async {
+    try {
+      final result = await _remote.getPopularInKazakhstan();
+      await _local.cacheSearch(_popularKey, result);
+      return result;
+    } on NetworkFailure {
+      final cached = _local.getCachedSearch(_popularKey, 1);
       if (cached != null) return cached;
       rethrow;
     }

@@ -9,6 +9,7 @@ import '../../core/widgets/product_widgets.dart';
 import '../auth/auth_cubit.dart';
 import '../favorites/favorites_cubit.dart';
 import '../history/history_cubit.dart';
+import 'popular_cubit.dart';
 
 /// Главная: приветствие, ввод штрихкода, статистика и недавние продукты.
 class DashboardScreen extends StatefulWidget {
@@ -22,11 +23,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final _formKey = GlobalKey<FormState>();
   final _barcodeController = TextEditingController();
 
-  /// Реальные штрихкоды из базы Open Food Facts для демонстрации.
+  /// Реальные штрихкоды казахстанских продуктов из базы Open Food Facts.
   static const _examples = {
-    'Nutella': '3017620422003',
-    'Coca-Cola': '5449000000996',
-    'Prince': '7622210449283',
+    'Шоколад «Казахстан»': '4870036001205',
+    'Молоко Lactel': '4870055002689',
+    'Кефир FoodMaster': '4870055000852',
+    'Вода Tassay': '4870071000195',
+    'Масло «Шедевр»': '4870035001152',
+    'Томатная паста Цин-Каз': '4870001081270',
   };
 
   @override
@@ -156,6 +160,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 24),
 
+              // Популярное в Казахстане
+              Text(s.popularKz, style: theme.textTheme.titleMedium),
+              Text(
+                s.popularKzHint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const _PopularCarousel(),
+              const SizedBox(height: 24),
+
               // Недавние продукты
               Text(s.recent, style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
@@ -220,5 +236,84 @@ class _StatCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Горизонтальная лента популярных казахстанских продуктов.
+class _PopularCarousel extends StatelessWidget {
+  const _PopularCarousel();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final state = context.watch<PopularCubit>().state;
+    const height = 200.0;
+
+    switch (state.status) {
+      case PopularStatus.loading:
+        return const SizedBox(
+          height: height,
+          child: Center(child: CircularProgressIndicator()),
+        );
+      case PopularStatus.failure:
+        return SizedBox(
+          height: 80,
+          child: Center(
+            child: TextButton.icon(
+              onPressed: () => context.read<PopularCubit>().load(),
+              icon: const Icon(Icons.refresh),
+              label: Text('${s.popularError}. ${s.retry}'),
+            ),
+          ),
+        );
+      case PopularStatus.success:
+        return SizedBox(
+          height: height,
+          // ListView.builder строит только видимые карточки.
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: state.products.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            itemBuilder: (context, i) {
+              final product = state.products[i];
+              return SizedBox(
+                width: 140,
+                child: Card(
+                  child: InkWell(
+                    onTap: () => context.push(Routes.product(product.barcode)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Stack(
+                            children: [
+                              ProductImage(url: product.imageUrl, size: 124),
+                              Positioned(
+                                right: 4,
+                                top: 4,
+                                child: NutriScoreBadge(grade: product.nutriScore, size: 24),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Expanded(
+                            child: Text(
+                              product.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+    }
   }
 }

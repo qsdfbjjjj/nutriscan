@@ -39,6 +39,16 @@ class SearchRefreshed extends SearchEvent {
   final Completer<void>? completer;
 }
 
+/// Включили или выключили фильтр «только Казахстан».
+class SearchCountryToggled extends SearchEvent {
+  const SearchCountryToggled(this.kazakhstanOnly);
+
+  final bool kazakhstanOnly;
+
+  @override
+  List<Object?> get props => [kazakhstanOnly];
+}
+
 // ======================= Состояние =======================
 
 enum SearchStatus { initial, loading, success, empty, failure }
@@ -52,6 +62,7 @@ class SearchState extends Equatable {
     this.hasMore = false,
     this.isLoadingMore = false,
     this.fromCache = false,
+    this.kazakhstanOnly = true,
     this.error,
   });
 
@@ -62,6 +73,7 @@ class SearchState extends Equatable {
   final bool hasMore;
   final bool isLoadingMore;
   final bool fromCache;
+  final bool kazakhstanOnly;
   final Object? error;
 
   SearchState copyWith({
@@ -72,6 +84,7 @@ class SearchState extends Equatable {
     bool? hasMore,
     bool? isLoadingMore,
     bool? fromCache,
+    bool? kazakhstanOnly,
     Object? error,
   }) {
     return SearchState(
@@ -82,13 +95,14 @@ class SearchState extends Equatable {
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       fromCache: fromCache ?? this.fromCache,
+      kazakhstanOnly: kazakhstanOnly ?? this.kazakhstanOnly,
       error: error,
     );
   }
 
   @override
   List<Object?> get props =>
-      [status, query, products, page, hasMore, isLoadingMore, fromCache, error];
+      [status, query, products, page, hasMore, isLoadingMore, fromCache, kazakhstanOnly, error];
 }
 
 // ======================= BLoC =======================
@@ -104,6 +118,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     on<SearchQueryChanged>(_onQueryChanged, transformer: debounceRestartable(debounce));
     on<SearchNextPageRequested>(_onNextPage);
     on<SearchRefreshed>(_onRefreshed);
+    on<SearchCountryToggled>(_onCountryToggled);
   }
 
   final ProductRepository _repository;
@@ -119,11 +134,32 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     if (query == state.query && state.status != SearchStatus.failure) return;
     if (query.length < minQueryLength) {
       // Сбрасываем поиск, только если что-то было найдено (иначе лишняя перерисовка).
-      if (state != const SearchState()) emit(const SearchState());
+      final reset = SearchState(kazakhstanOnly: state.kazakhstanOnly);
+      if (state != reset) emit(reset);
       return;
     }
-    emit(SearchState(status: SearchStatus.loading, query: query));
+    emit(SearchState(
+      status: SearchStatus.loading,
+      query: query,
+      kazakhstanOnly: state.kazakhstanOnly,
+    ));
     await _loadFirstPage(query, emit);
+  }
+
+  Future<void> _onCountryToggled(
+    SearchCountryToggled event,
+    Emitter<SearchState> emit,
+  ) async {
+    if (state.query.length < minQueryLength) {
+      emit(state.copyWith(kazakhstanOnly: event.kazakhstanOnly));
+      return;
+    }
+    emit(SearchState(
+      status: SearchStatus.loading,
+      query: state.query,
+      kazakhstanOnly: event.kazakhstanOnly,
+    ));
+    await _loadFirstPage(state.query, emit);
   }
 
   Future<void> _onRefreshed(SearchRefreshed event, Emitter<SearchState> emit) async {
@@ -141,7 +177,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
   Future<void> _loadFirstPage(String query, Emitter<SearchState> emit) async {
     try {
-      final result = await _repository.search(query);
+      final kz = state.kazakhstanOnly;
+      final result = await _repository.search(query, kazakhstanOnly: kz);
       emit(SearchState(
         status: result.products.isEmpty ? SearchStatus.empty : SearchStatus.success,
         query: query,
@@ -149,9 +186,15 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         page: result.page,
         hasMore: result.hasMore,
         fromCache: result.fromCache,
+        kazakhstanOnly: kz,
       ));
     } catch (error) {
-      emit(SearchState(status: SearchStatus.failure, query: query, error: error));
+      emit(SearchState(
+        status: SearchStatus.failure,
+        query: query,
+        kazakhstanOnly: state.kazakhstanOnly,
+        error: error,
+      ));
     }
   }
 
@@ -164,7 +207,11 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
     emit(state.copyWith(isLoadingMore: true));
     try {
-      final result = await _repository.search(state.query, page: state.page + 1);
+      final result = await _repository.search(
+        state.query,
+        page: state.page + 1,
+        kazakhstanOnly: state.kazakhstanOnly,
+      );
       // Убираем дубли: API иногда возвращает один продукт на соседних страницах.
       final known = state.products.map((p) => p.barcode).toSet();
       emit(state.copyWith(

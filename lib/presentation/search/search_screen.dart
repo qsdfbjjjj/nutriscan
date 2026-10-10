@@ -54,10 +54,13 @@ class _SearchScreenState extends State<SearchScreen> {
       appBar: AppBar(
         title: Text(s.search),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(72),
+          preferredSize: const Size.fromHeight(120),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: ValueListenableBuilder(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+            ValueListenableBuilder(
               valueListenable: _queryController,
               builder: (context, value, _) => TextField(
                 key: const Key('search_field'),
@@ -78,6 +81,21 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                 ),
               ),
+            ),
+            const SizedBox(height: 8),
+            BlocBuilder<SearchBloc, SearchState>(
+              buildWhen: (a, b) => a.kazakhstanOnly != b.kazakhstanOnly,
+              builder: (context, state) => FilterChip(
+                key: const Key('kz_filter'),
+                avatar: const Icon(Icons.flag_outlined, size: 18),
+                label: Text(s.kzOnly),
+                selected: state.kazakhstanOnly,
+                showCheckmark: false,
+                onSelected: (value) =>
+                    context.read<SearchBloc>().add(SearchCountryToggled(value)),
+              ),
+            ),
+              ],
             ),
           ),
         ),
@@ -103,7 +121,10 @@ class _SearchScreenState extends State<SearchScreen> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   children: [
                     const SizedBox(height: 80),
-                    MessageView(icon: Icons.search_off, message: s.nothingFound),
+                    MessageView(
+                      icon: Icons.search_off,
+                      message: state.kazakhstanOnly ? s.nothingFoundKz : s.nothingFound,
+                    ),
                   ],
                 ),
               );

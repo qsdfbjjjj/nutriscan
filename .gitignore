@@ -50,3 +50,4 @@ app.*.map.json
 # Проверка
 tool/check_log.txt
 tool/update.zip
+tool/commit_message.txt

@@ -154,6 +154,13 @@ class _ProductInfo extends StatelessWidget {
         ],
         const SizedBox(height: 4),
         Text(product.barcode, style: theme.textTheme.bodySmall),
+        if (product.isMadeInKazakhstan) ...[
+          const SizedBox(height: 8),
+          Chip(
+            avatar: const Icon(Icons.flag_outlined, size: 18),
+            label: Text(s.madeInKz),
+          ),
+        ],
         const SizedBox(height: 16),
 
         // Nutri-Score
