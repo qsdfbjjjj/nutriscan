@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 // Неделя 1: задачи на Dart.
 // Запуск: dart run dart_tasks/tasks.dart
 
