@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -60,7 +61,18 @@ class ProductImage extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       child: imageUrl == null
           ? placeholder
-          : CachedNetworkImage(
+          // В браузере сервер картинок не отдаёт CORS-заголовки, поэтому
+          // показываем картинку обычным HTML-тегом <img>.
+          : kIsWeb
+              ? Image.network(
+                  imageUrl,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                  webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+                  errorBuilder: (_, _, _) => placeholder,
+                )
+              : CachedNetworkImage(
               imageUrl: imageUrl,
               width: size,
               height: size,
